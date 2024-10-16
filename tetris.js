@@ -93,10 +93,15 @@ function createPiece(type) {
 }
 
 function draw() {
-    context.fillStyle = '#000';
+    // Create a gradient background
+    const gradient = context.createLinearGradient(0, 0, 0, canvas.height);
+    gradient.addColorStop(0, '#3a4a6e');  // Lighter blue-gray
+    gradient.addColorStop(1, '#2c3e50');  // Darker blue-gray
+    context.fillStyle = gradient;
     context.fillRect(0, 0, canvas.width, canvas.height);
 
     drawMatrix(arena, {x: 0, y: 0});
+    drawGhostPiece();
     drawMatrix(player.matrix, player.pos);
 }
 
@@ -167,11 +172,23 @@ function playerReset() {
     player.pos.x = (arena[0].length / 2 | 0) -
                    (player.matrix[0].length / 2 | 0);
     if (collide(arena, player)) {
-        gameOver = true;
-        arena.forEach(row => row.fill(0));
-        player.score = 0;
-        updateScore();
+        handleGameOver();
     }
+}
+
+function handleGameOver() {
+    gameOver = true;
+    paused = true;
+    startButton.textContent = 'Restart';
+    
+    // Draw "Game Over" text
+    context.fillStyle = 'rgba(0, 0, 0, 0.6)';  // Less opaque overlay
+    context.fillRect(0, 0, canvas.width, canvas.height);
+    context.fillStyle = 'white';
+    context.font = '1px Arial';
+    context.textAlign = 'center';
+    context.textBaseline = 'middle';
+    context.fillText('Game Over', canvas.width / 2 / 30, canvas.height / 2 / 30);
 }
 
 function playerRotate(dir) {
@@ -232,7 +249,12 @@ const targetFPS = 60;
 const frameInterval = 1000 / targetFPS;
 
 function update(time = 0) {
-    if (gameOver || paused) {
+    if (gameOver) {
+        handleGameOver();
+        return;
+    }
+
+    if (paused) {
         return;
     }
 
@@ -258,6 +280,52 @@ function updateLevel() {
     if (dropInterval < 100) {
         dropInterval = 100;
     }
+}
+
+// Add this function to calculate the ghost piece position
+function getGhostPosition() {
+    const ghost = {
+        pos: {...player.pos},
+        matrix: player.matrix,
+    };
+
+    while (!collide(arena, ghost)) {
+        ghost.pos.y++;
+    }
+    ghost.pos.y--;
+
+    return ghost;
+}
+
+// Add this function to draw the ghost piece
+function drawGhostPiece() {
+    const ghost = getGhostPosition();
+    const ghostOffset = ghost.pos.y - player.pos.y;
+
+    // Draw shadow with gradient
+    const shadowGradient = context.createLinearGradient(0, player.pos.y, 0, ghost.pos.y + 1);
+    shadowGradient.addColorStop(0, 'rgba(255, 255, 255, 0.3)');  // Slightly more opaque
+    shadowGradient.addColorStop(1, 'rgba(255, 255, 255, 0.1)');  // Slightly more opaque
+
+    context.fillStyle = shadowGradient;
+    player.matrix.forEach((row, y) => {
+        row.forEach((value, x) => {
+            if (value !== 0) {
+                context.fillRect(x + player.pos.x, y + player.pos.y, 1, ghostOffset);
+            }
+        });
+    });
+
+    // Draw ghost piece outline
+    context.strokeStyle = 'rgba(255, 255, 255, 0.5)';  // More visible outline
+    context.lineWidth = 0.05;
+    ghost.matrix.forEach((row, y) => {
+        row.forEach((value, x) => {
+            if (value !== 0) {
+                context.strokeRect(x + ghost.pos.x, y + ghost.pos.y, 1, 1);
+            }
+        });
+    });
 }
 
 // Add these new button selectors
