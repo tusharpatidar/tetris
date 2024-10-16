@@ -1,0 +1,22 @@
+{
+  "manifest_version": 3,
+  "name": "Tetris Chrome Extension",
+  "version": "1.0",
+  "description": "Play Tetris right in your browser!",
+  "action": {
+    "default_icon": {
+      "16": "images/icon16.png",
+      "48": "images/icon48.png",
+      "128": "images/icon128.png"
+    }
+  },
+  "permissions": ["storage"],
+  "icons": {
+    "16": "images/icon16.png",
+    "48": "images/icon48.png",
+    "128": "images/icon128.png"
+  },
+  "background": {
+    "service_worker": "background.js"
+  }
+}
